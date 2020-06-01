@@ -13,9 +13,9 @@ namespace SlackApiCommunication
         {
             Console.WriteLine("SLACK komunikacija");
             Console.WriteLine("__________________");
-            Console.WriteLine("Unesite komandu: ");
-            Console.WriteLine("Test-Connection -Token \"Access Token\"");
-            Console.WriteLine("Send-Message -Token \"Access Token\" -Channel  \"Channel Id\" -Text \"Hello world!\"");
+            Console.WriteLine("[1] Test-Connection");
+            Console.WriteLine("[2] Send-Message");
+            Console.WriteLine("[3] Get-Message");
             Console.Write(Environment.NewLine);
             string odabir = "";
             Program program = new Program();
@@ -49,7 +49,7 @@ namespace SlackApiCommunication
                             }
                             break;
                         }
-                    //Send-Message -Token "xoxp-768273224514-781055315909-1148760846918-cebf41639c7d834f5bbe3094051cc49d" Channel "CPGH2UN58" -Text "Hello World!"
+                    //Send-Message -Token "xoxp-768273224514-781055315909-1148760846918-cebf41639c7d834f5bbe3094051cc49d" -Channel "CPGH2UN58" -Text "Hello World!"
                     case "Send-Message":
                         {
                             //Regex provjera komande te dohvaćanje tokena i teksta
@@ -57,14 +57,24 @@ namespace SlackApiCommunication
                             Match[] matches = Regex.Matches(odabir, @regEx)
                        .Cast<Match>()
                        .ToArray();
-
+                            String token = "";
+                            String channel = "";
+                            String tekst = "";
                             //Dohvaćanje potrebnih atributa iz komandi
-                            String token = matches[0].Groups[1].ToString().Replace("\"", String.Empty);
-                            String channel = matches[0].Groups[2].ToString().Replace("\"", String.Empty);
-                            String text = matches[0].Groups[3].ToString().Replace("\"", String.Empty);
+                            if (matches.Length != 0)
+                            {
+                                token = matches[0].Groups[1].ToString().Replace("\"", String.Empty);
+                                channel = matches[0].Groups[2].ToString().Replace("\"", String.Empty);
+                                tekst = matches[0].Groups[3].ToString().Replace("\"", String.Empty);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Neispravna komanda zahtjeva.");
+                                break;
+                            }
 
                             //Slanje zahtjeva za slanje poruka na željeni kanal
-                            string odgovorPosluzitelja = program.SlanjeZahtjeva("chat.postMessage", token, channel, text);
+                            string odgovorPosluzitelja = program.SlanjeZahtjeva("chat.postMessage", token, channel, tekst);
 
                             OdgovorSlanje odgovorSlanje = JsonConvert.DeserializeObject<OdgovorSlanje>(odgovorPosluzitelja);
                             if (odgovorSlanje.ok == true)
@@ -78,7 +88,7 @@ namespace SlackApiCommunication
 
                             break;
                         }
-                    //Get-Message -Token "xoxp-768273224514-781055315909-1148760846918 cebf41639c7d834f5bbe3094051cc49d" -Channel "CPGH2UN58" -Count "4" -Unreads "true" -Oldest "1591005658" -Latest "1591005658"
+                    //Get-Message -Token "xoxp-768273224514-781055315909-1148760846918 cebf41639c7d834f5bbe3094051cc49d" -Channel "CNSDRDL2X" -Count "4" -Unreads "true" -Oldest "1591005658" -Latest "1591005658"
                     case "Get-Message":
                         {
                             string regEx = "Get-Message -Token (?'token'\".+\") -Channel (?'channel'\"[^\"]*\")(?: -Count (?'count'\"[0-9]*\"))?(?: -Unreads (?'unreads'\"true\"|\"false\"))?(?: -Oldest (?'oldest'\"[0-9]*\"))?(?: -Latest (?'latest'\"[0-9]*\"))?";
@@ -115,7 +125,7 @@ namespace SlackApiCommunication
 
 
                             //Slanje zahtjeva za slanje poruka na željeni kanal
-                            string odgovorPosluzitelja = program.SlanjeZahtjeva("channels.history", token, channel, count,unreads,oldest,latest);
+                            string odgovorPosluzitelja = program.SlanjeZahtjeva("channels.history", token, channel, count, unreads, oldest, latest);
 
                             DohvacanjePoruka.OdgovorDohvacanjePoruka odgovorSlanje = JsonConvert.DeserializeObject<DohvacanjePoruka.OdgovorDohvacanjePoruka>(odgovorPosluzitelja);
                             if (odgovorSlanje.ok == true)
@@ -123,7 +133,7 @@ namespace SlackApiCommunication
                                 //Ispis dohvaćenih poruka
                                 foreach (var poruka in odgovorSlanje.messages)
                                 {
-                                    Console.WriteLine("Korisnik ["+poruka.user+"]: "+poruka.text);
+                                    Console.WriteLine("Korisnik [" + poruka.user + "]: " + poruka.text);
                                 }
                             }
                             else
@@ -170,7 +180,7 @@ namespace SlackApiCommunication
             return content;
         }
 
-        public String SlanjeZahtjeva(string putanjaKomande, string token, string channel, string count, string unreads,string oldest, string latest)
+        public String SlanjeZahtjeva(string putanjaKomande, string token, string channel, string count, string unreads, string oldest, string latest)
         {
             String urlMain = "https://slack.com/api/";
             var client = new RestClient(urlMain + putanjaKomande);
